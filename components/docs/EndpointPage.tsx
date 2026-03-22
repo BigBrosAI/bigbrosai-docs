@@ -6,6 +6,13 @@ import { DocSection } from "./DocSection";
 import type { ApiEndpoint } from "@/types";
 
 export function EndpointPage({ endpoint: ep }: { endpoint: ApiEndpoint }) {
+  if (!ep) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <p className="dark:text-[#8b949e] text-gray-500 text-sm">This page is not yet available.</p>
+      </div>
+    );
+  }
   return (
     <div>
       {/* Title block */}
