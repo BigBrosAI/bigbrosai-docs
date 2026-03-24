@@ -86,10 +86,8 @@ func main() {
     },
     successResponse: `{
   "data": {
-    "id": 98765,
-    "status": "queued",
-    "from": "hello@yourdomain.com",
-    "to": ["user@example.com"]
+    "id": 19,
+    "message_id": "22ef6d06-bd67-420a-94d5-d02d0cb091c0"
   },
   "message": "Email queued successfully"
 }`,
@@ -444,7 +442,7 @@ const res = await fetch(\`https://api.bigbrosai.com/api/v1/email/sends?\${params
       { field: "projectId",   type: "string",   required: true,  description: "Project ID.",                                                    example: "6789abc123"                        },
       { field: "domain",      type: "string",   required: true,  description: "Domain to scope this webhook to.",                               example: "yourdomain.com"                    },
       { field: "callbackUrl", type: "string",   required: true,  description: "Your HTTPS endpoint that will receive events.",                  example: "https://yourapp.com/webhooks/email" },
-      { field: "events",      type: "string[]", required: false, description: "Events to subscribe to (default: all). See Email Webhooks docs.", example: '["email.delivered","email.bounced"]' },
+      { field: "events",      type: "string[]", required: false, description: "Events to subscribe to (default: all). Valid values: send.recipient.accepted, send.recipient.bounced, send.recipient.complained, send.recipient.deferred, send.recipient.failed, send.recipient.suppressed.", example: '["send.recipient.accepted","send.recipient.bounced"]' },
     ],
     codeExamples: {
       curl: `curl -X POST https://api.bigbrosai.com/api/v1/email/webhook/config \\
@@ -455,7 +453,7 @@ const res = await fetch(\`https://api.bigbrosai.com/api/v1/email/sends?\${params
     "projectId": "6789abc123",
     "domain": "yourdomain.com",
     "callbackUrl": "https://yourapp.com/webhooks/email",
-    "events": ["email.delivered", "email.bounced", "email.complained", "email.deferred"]
+    "events": ["send.recipient.accepted", "send.recipient.bounced", "send.recipient.complained", "send.recipient.deferred", "send.recipient.failed", "send.recipient.suppressed"]
   }'`,
       nodejs: `const res = await fetch('https://api.bigbrosai.com/api/v1/email/webhook/config', {
   method: 'POST',
@@ -468,7 +466,7 @@ const res = await fetch(\`https://api.bigbrosai.com/api/v1/email/sends?\${params
     projectId: '6789abc123',
     domain: 'yourdomain.com',
     callbackUrl: 'https://yourapp.com/webhooks/email',
-    events: ['email.delivered', 'email.bounced', 'email.complained', 'email.deferred'],
+    events: ['send.recipient.accepted', 'send.recipient.bounced', 'send.recipient.complained', 'send.recipient.deferred', 'send.recipient.failed', 'send.recipient.suppressed'],
   }),
 });`,
       python: `res = requests.post(
@@ -478,7 +476,7 @@ const res = await fetch(\`https://api.bigbrosai.com/api/v1/email/sends?\${params
         "projectId": "6789abc123",
         "domain": "yourdomain.com",
         "callbackUrl": "https://yourapp.com/webhooks/email",
-        "events": ["email.delivered", "email.bounced"],
+        "events": ["send.recipient.accepted", "send.recipient.bounced"],
     },
 )`,
     },
@@ -487,7 +485,7 @@ const res = await fetch(\`https://api.bigbrosai.com/api/v1/email/sends?\${params
     "domain": "yourdomain.com",
     "callbackUrl": "https://yourapp.com/webhooks/email",
     "secret": "whsec_abc123xyz...",
-    "events": ["email.delivered", "email.bounced", "email.complained", "email.deferred"],
+    "events": ["send.recipient.accepted", "send.recipient.bounced", "send.recipient.complained", "send.recipient.deferred", "send.recipient.failed", "send.recipient.suppressed"],
     "isActive": true
   },
   "message": "Webhook configured. Store the secret — it will not be shown again."
@@ -498,6 +496,89 @@ const res = await fetch(\`https://api.bigbrosai.com/api/v1/email/sends?\${params
   "error": ["callbackUrl must be a URL address"],
   "timestamp": "2026-03-22T10:00:00.000Z",
   "path": "/api/v1/email/webhook/config"
+}`,
+  },
+
+  // ─── Analytics ───────────────────────────────────────────────────────────────
+
+  "email-analytics-stats": {
+    id: "email-analytics-stats",
+    title: "Analytics Stats",
+    method: "GET",
+    endpoint: "/api/v1/email/analytics/stats",
+    subtitle: "Get email send stats — sends, bounce rate, complaint rate",
+    description: "Returns aggregated stats for your project's email sends over a given period. Scoped to your org's verified domains.",
+    queryParams: [
+      { field: "projectId", type: "string", required: true,  description: "Project ID.",                                    example: "6789abc123" },
+      { field: "period",    type: "string", required: false, description: "Time window: 24h | 7d | 30d (default: 30d).",    example: "7d"         },
+    ],
+    codeExamples: {
+      curl: `curl "https://api.bigbrosai.com/api/v1/email/analytics/stats?projectId=6789abc123&period=7d" \\
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \\
+  -H "x-org-id: YOUR_ORG_ID"`,
+      nodejs: `const res = await fetch('https://api.bigbrosai.com/api/v1/email/analytics/stats?projectId=6789abc123&period=7d', {
+  headers: { 'Authorization': 'Bearer YOUR_JWT_TOKEN', 'x-org-id': 'YOUR_ORG_ID' },
+});`,
+      python: `res = requests.get(
+    "https://api.bigbrosai.com/api/v1/email/analytics/stats",
+    headers={"Authorization": "Bearer YOUR_JWT_TOKEN", "x-org-id": "YOUR_ORG_ID"},
+    params={"projectId": "6789abc123", "period": "7d"},
+)`,
+    },
+    successResponse: `{
+  "data": {
+    "sends": 142,
+    "bounce_rate": 0.0211,
+    "complaint_rate": 0.0014,
+    "period": "7d"
+  }
+}`,
+    errorResponse: `{
+  "success": false,
+  "message": "Request failed",
+  "error": ["Unauthorized"],
+  "timestamp": "2026-03-22T10:00:00.000Z",
+  "path": "/api/v1/email/analytics/stats"
+}`,
+  },
+
+  "email-analytics-chart": {
+    id: "email-analytics-chart",
+    title: "Analytics Chart",
+    method: "GET",
+    endpoint: "/api/v1/email/analytics/chart",
+    subtitle: "Get daily bucketed send/bounce/complaint data for charting",
+    description: "Returns daily aggregated data for your project's email sends. Useful for rendering time-series charts.",
+    queryParams: [
+      { field: "projectId", type: "string", required: true,  description: "Project ID.",                                    example: "6789abc123" },
+      { field: "period",    type: "string", required: false, description: "Time window: 24h | 7d | 30d (default: 30d).",    example: "30d"        },
+    ],
+    codeExamples: {
+      curl: `curl "https://api.bigbrosai.com/api/v1/email/analytics/chart?projectId=6789abc123&period=30d" \\
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \\
+  -H "x-org-id: YOUR_ORG_ID"`,
+      nodejs: `const res = await fetch('https://api.bigbrosai.com/api/v1/email/analytics/chart?projectId=6789abc123&period=30d', {
+  headers: { 'Authorization': 'Bearer YOUR_JWT_TOKEN', 'x-org-id': 'YOUR_ORG_ID' },
+});`,
+      python: `res = requests.get(
+    "https://api.bigbrosai.com/api/v1/email/analytics/chart",
+    headers={"Authorization": "Bearer YOUR_JWT_TOKEN", "x-org-id": "YOUR_ORG_ID"},
+    params={"projectId": "6789abc123", "period": "30d"},
+)`,
+    },
+    successResponse: `{
+  "data": [
+    { "date": "2026-03-01", "sends": 18, "bounced": 1, "complained": 0 },
+    { "date": "2026-03-02", "sends": 24, "bounced": 0, "complained": 0 },
+    { "date": "2026-03-03", "sends": 31, "bounced": 2, "complained": 1 }
+  ]
+}`,
+    errorResponse: `{
+  "success": false,
+  "message": "Request failed",
+  "error": ["Unauthorized"],
+  "timestamp": "2026-03-22T10:00:00.000Z",
+  "path": "/api/v1/email/analytics/chart"
 }`,
   },
 };

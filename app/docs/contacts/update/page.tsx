@@ -1,9 +1,4 @@
 import type { Metadata } from "next";
-import { EndpointPage } from "@/components/docs/EndpointPage";
-import { ENDPOINTS } from "@/lib/docs-data";
-
+import { ComingSoon } from "@/components/docs/ComingSoon";
 export const metadata: Metadata = { title: "Update Contact" };
-
-export default function Page() {
-  return <EndpointPage endpoint={ENDPOINTS["send-message"]} />;
-}
+export default function Page() { return <ComingSoon title="Update Contact" />; }

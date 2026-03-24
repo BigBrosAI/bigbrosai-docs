@@ -42,7 +42,7 @@ const WA_RESPONSE = `{
 }`;
 
 const EMAIL_RESPONSE = `{
-  "data": { "id": 98765, "status": "queued" },
+  "data": { "id": 19, "message_id": "22ef6d06-bd67-420a-94d5-d02d0cb091c0" },
   "message": "Email queued successfully"
 }`;
 

@@ -5,13 +5,14 @@ import { DocSection, DocCallout } from "@/components/docs/DocSection";
 
 export const metadata: Metadata = { title: "WhatsApp Webhooks" };
 
+// Meta sends a single "messages" field in the webhook entry.
+// The type of event is determined by the content of the value object.
 const EVENTS = [
-  { event: "message.received",  desc: "An inbound message was received from a WhatsApp user." },
-  { event: "message.sent",      desc: "The message was sent to Meta's servers." },
-  { event: "message.delivered", desc: "The message was delivered to the recipient's device." },
-  { event: "message.read",      desc: "The recipient opened and read the message (blue ticks)." },
-  { event: "message.failed",    desc: "Permanent delivery failure — no further retries." },
-  { event: "message_template_status_update", desc: "A template's Meta approval status changed (APPROVED / REJECTED / PENDING)." },
+  { event: "messages (inbound)",    desc: "An inbound message was received from a WhatsApp user. value.messages[] is populated." },
+  { event: "statuses (sent)",       desc: "Message sent to Meta's servers. value.statuses[].status === 'sent'." },
+  { event: "statuses (delivered)",  desc: "Message delivered to the recipient's device. value.statuses[].status === 'delivered'." },
+  { event: "statuses (read)",       desc: "Recipient opened and read the message (blue ticks). value.statuses[].status === 'read'." },
+  { event: "statuses (failed)",     desc: "Permanent delivery failure. value.statuses[].status === 'failed'." },
 ];
 
 const PAYLOAD_EXAMPLE = `// Inbound message

@@ -51,10 +51,12 @@ export default function Page() {
             </thead>
             <tbody>
               {[
-                ["email.delivered",  "The receiving mail server accepted the email."],
-                ["email.bounced",    "Permanent delivery failure — address invalid or server rejected."],
-                ["email.complained", "Recipient marked the email as spam."],
-                ["email.deferred",   "Temporary failure — the platform will retry automatically."],
+                ["send.recipient.accepted",   "The receiving mail server accepted the email. Billing is charged at this point."],
+                ["send.recipient.bounced",    "Permanent delivery failure — address invalid or server rejected."],
+                ["send.recipient.complained", "Recipient marked the email as spam."],
+                ["send.recipient.deferred",   "Temporary failure — the relay will retry automatically."],
+                ["send.recipient.failed",     "Email failed to send (non-bounce error)."],
+                ["send.recipient.suppressed", "Recipient is on the suppression list — email was not sent."],
               ].map(([event, when]) => (
                 <tr key={event} className="border-b dark:border-[#161b22] border-gray-100 last:border-0">
                   <td className="px-4 py-2.5 font-mono text-purple-400 text-xs whitespace-nowrap">{event}</td>
@@ -68,9 +70,8 @@ export default function Page() {
 
       <DocSection title="The Signing Secret">
         <p className="text-sm dark:text-[#8b949e] text-gray-600">
-          When you save the webhook config, BigBrosAI returns a <code className="dark:text-[#79c0ff] text-blue-600">secret</code> string
-          (prefixed <code className="dark:text-[#79c0ff] text-blue-600">whsec_...</code>). This secret is used to sign every
-          webhook payload with HMAC-SHA256. Store it as an environment variable and use it to verify
+          When you save the webhook config, BigBrosAI returns a <code className="dark:text-[#79c0ff] text-blue-600">secret</code> string.
+          This secret is used to sign every webhook payload with HMAC-SHA256. Store it as an environment variable and use it to verify
           incoming requests. See the <a href="/docs/email/webhooks" className="text-blue-500 hover:underline">Email Webhooks guide</a> for
           full verification examples.
         </p>

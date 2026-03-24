@@ -13,54 +13,36 @@ export const NAV_STRUCTURE: NavSection[] = [
     ],
   },
   {
-    section: "Messaging",
+    section: "WhatsApp",
     items: [
-      { id: "send-message",   label: "Send Message",    method: "POST" },
-      { id: "send-template",  label: "Send Template",   method: "POST" },
-      { id: "send-media",     label: "Send Media",      method: "POST" },
-      { id: "bulk-messaging", label: "Bulk Messaging",  method: "POST" },
+      { id: "wa-api-campaign",           label: "Send Template Message",   method: "POST" },
+      { id: "wa-template-create",        label: "Create Template",         method: "POST" },
+      { id: "wa-template-list",          label: "List Templates",          method: "GET"  },
+      { id: "wa-template-send",          label: "Send Template (JWT)",     method: "POST" },
+      { id: "wa-profile",                label: "Get Business Profile",    method: "GET"  },
+      { id: "wa-profile-update",         label: "Update Business Profile", method: "POST" },
+      { id: "wa-business-verification",  label: "Business Verification",   method: "GET"  },
+      { id: "wa-display-name-request",   label: "Display Name Request",    method: "POST" },
+      { id: "wa-display-name-status",    label: "Display Name Status",     method: "GET"  },
+      { id: "wa-webhooks",               label: "WhatsApp Webhooks",                      },
     ],
   },
   {
-    section: "Campaigns",
+    section: "Email",
     items: [
-      { id: "create-campaign",   label: "Create Campaign",   method: "POST" },
-      { id: "schedule-campaign", label: "Schedule Campaign",  method: "PUT" },
-      { id: "campaign-status",   label: "Campaign Status",    method: "GET" },
+      { id: "email-send",           label: "Send Email",        method: "POST" },
+      { id: "email-domain-add",     label: "Add Domain",        method: "POST" },
+      { id: "email-domain-verify",  label: "Verify Domain",     method: "POST" },
+      { id: "email-domain-list",    label: "List Domains",      method: "POST" },
+      { id: "email-sends",          label: "List Sends",        method: "GET"  },
+      { id: "email-sends-get",      label: "Get Send",          method: "GET"  },
+      { id: "email-ip-allowlist",   label: "IP Allowlist",      method: "POST" },
+      { id: "email-webhook-config", label: "Webhook Config",    method: "POST" },
+      { id: "email-analytics-stats",label: "Analytics Stats",   method: "GET"  },
+      { id: "email-analytics-chart",label: "Analytics Chart",   method: "GET"  },
+      { id: "email-webhooks",       label: "Email Webhooks",                   },
     ],
   },
-  {
-    section: "Contacts",
-    items: [
-      { id: "create-contact", label: "Create Contact", method: "POST" },
-      { id: "update-contact", label: "Update Contact", method: "PUT" },
-      { id: "get-contact",    label: "Get Contact",    method: "GET" },
-      { id: "list-contacts",  label: "List Contacts",  method: "GET" },
-    ],
-  },
-  {
-    section: "Automation",
-    items: [
-      { id: "create-automation", label: "Create Automation", method: "POST" },
-      { id: "trigger-workflow",  label: "Trigger Workflow",  method: "POST" },
-    ],
-  },
-  {
-    section: "Analytics",
-    items: [
-      { id: "campaign-analytics", label: "Campaign Analytics", method: "GET" },
-      { id: "message-status",     label: "Message Status",     method: "GET" },
-      { id: "delivery-reports",   label: "Delivery Reports",   method: "GET" },
-    ],
-  },
-  {
-    section: "Webhooks",
-    items: [
-      { id: "webhook-setup",  label: "Webhook Setup" },
-      { id: "webhook-events", label: "Webhook Events" },
-    ],
-  },
-
   {
     section: "More",
     items: [
@@ -70,12 +52,8 @@ export const NAV_STRUCTURE: NavSection[] = [
 ];
 
 export const SECTION_ICONS: Record<string, string> = {
-  Overview:   "BookOpen",
-  Messaging:  "MessageSquare",
-  Campaigns:  "Megaphone",
-  Contacts:   "Users",
-  Automation: "Zap",
-  Analytics:  "BarChart2",
-  Webhooks:   "Webhook",
-  More:       "MoreHorizontal",
+  Overview:  "BookOpen",
+  WhatsApp:  "MessageSquare",
+  Email:     "Mail",
+  More:      "MoreHorizontal",
 };

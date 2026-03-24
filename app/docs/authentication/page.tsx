@@ -50,7 +50,6 @@ export default function AuthPage() {
             <tbody>
               {[
                 ["live_", "Production", "Real message delivery, charges apply"],
-                ["test_", "Sandbox",    "No real sends, safe for development"],
               ].map(([prefix, env, behaviour], i) => (
                 <tr key={i} className="border-b border-[#161b22] last:border-0">
                   <td className="px-3 py-2.5 font-mono text-[#79c0ff] text-sm">{prefix}</td>

@@ -16,6 +16,9 @@ const BG_MAP: Record<string, string> = {
   orange: "bg-orange-500/10 border-orange-500/30", yellow: "bg-yellow-500/10 border-yellow-500/30",
 };
 
+const WA_EVENTS = WEBHOOK_EVENTS.filter(e => !e.event.startsWith("send."));
+const EMAIL_EVENTS = WEBHOOK_EVENTS.filter(e => e.event.startsWith("send."));
+
 export default function WebhookEventsPage() {
   return (
     <div>
@@ -26,13 +29,13 @@ export default function WebhookEventsPage() {
         </div>
         <p className="text-[#6a737d]">Real-time event notifications delivered to your server</p>
       </div>
-      <p className="text-[#8b949e] leading-relaxed mb-8">
-        Webhooks deliver real-time event notifications to your server via HTTP POST requests.
-        Configure endpoints in your dashboard under <strong className="text-[#e1e4e8]">Settings → Webhooks</strong>.
-      </p>
-      <DocSection title="Available Events">
+
+      <DocSection title="WhatsApp Events">
+        <p className="text-[#8b949e] text-sm mb-3 leading-relaxed">
+          Meta sends these events to your webhook URL configured in the dashboard under <strong className="text-[#e1e4e8]">Project → Settings → WhatsApp</strong>.
+        </p>
         <div className="space-y-2">
-          {WEBHOOK_EVENTS.map(e => (
+          {WA_EVENTS.map(e => (
             <div key={e.event} className={`flex items-start gap-3 p-3.5 rounded-lg border ${BG_MAP[e.color] ?? "bg-[#161b22] border-[#21262d]"}`}>
               <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 bg-current ${COLOR_MAP[e.color] ?? "text-[#8b949e]"}`} />
               <div>
@@ -43,39 +46,67 @@ export default function WebhookEventsPage() {
           ))}
         </div>
       </DocSection>
-      <DocSection title="Webhook Payload">
+
+      <DocSection title="Email Events (Hyvor Relay)">
+        <p className="text-[#8b949e] text-sm mb-3 leading-relaxed">
+          These events are forwarded to your callback URL configured via the <a href="/docs/email/webhook-config" className="text-[#58a6ff] hover:underline">Email Webhook Config</a> endpoint.
+          Each payload is signed with <code className="text-[#79c0ff] bg-[#161b22] px-1 rounded text-xs font-mono border border-[#21262d]">X-Bigbrosai-Signature</code> (HMAC-SHA256).
+        </p>
+        <div className="space-y-2">
+          {EMAIL_EVENTS.map(e => (
+            <div key={e.event} className={`flex items-start gap-3 p-3.5 rounded-lg border ${BG_MAP[e.color] ?? "bg-[#161b22] border-[#21262d]"}`}>
+              <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 bg-current ${COLOR_MAP[e.color] ?? "text-[#8b949e]"}`} />
+              <div>
+                <code className={`text-sm font-mono font-semibold ${COLOR_MAP[e.color] ?? "text-[#79c0ff]"}`}>{e.event}</code>
+                <p className="text-[#8b949e] text-xs mt-0.5 leading-relaxed">{e.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </DocSection>
+
+      <DocSection title="Email Webhook Payload">
+        <p className="text-[#8b949e] text-sm mb-3">The payload forwarded to your callback URL:</p>
         <CodeBlock lang="json" code={`{
-  "event": "message.delivered",
-  "timestamp": "2026-03-09T10:30:05Z",
-  "data": {
-    "message_id": "msg_01HXYZ9876ABC",
-    "phone": "+919876543210",
-    "delivered_at": "2026-03-09T10:30:04Z",
-    "read_at": null
-  },
-  "signature": "sha256=abc123def456..."
+  "event": "send.recipient.accepted",
+  "payload": {
+    "send": {
+      "id": 19,
+      "uuid": "22ef6d06-bd67-420a-94d5-d02d0cb091c0",
+      "from_address": "hello@yourdomain.com",
+      "subject": "Welcome"
+    },
+    "recipient": {
+      "id": 21,
+      "address": "user@example.com",
+      "status": "accepted"
+    }
+  }
 }`} />
       </DocSection>
-      <DocSection title="Security Verification">
+
+      <DocSection title="Verifying Email Webhook Signatures">
         <p className="text-[#8b949e] text-sm leading-relaxed mb-3">
-          Every webhook request includes an HMAC-SHA256 signature in the <code className="text-[#79c0ff] bg-[#161b22] px-1 rounded text-xs font-mono border border-[#21262d]">X-BigBrosAI-Signature</code> header.
-          Verify it to ensure the payload is genuine.
+          Every forwarded email webhook includes an HMAC-SHA256 signature in the{" "}
+          <code className="text-[#79c0ff] bg-[#161b22] px-1 rounded text-xs font-mono border border-[#21262d]">X-Bigbrosai-Signature</code> header.
+          The secret is returned once when you configure the webhook.
         </p>
         <CodeBlock lang="javascript" code={`const crypto = require('crypto');
 
-function verifyWebhook(payload, signature, secret) {
+function verifyWebhook(rawBody, signatureHeader, secret) {
   const expected = 'sha256=' + crypto
     .createHmac('sha256', secret)
-    .update(payload)
+    .update(rawBody)
     .digest('hex');
   return crypto.timingSafeEqual(
-    Buffer.from(signature),
+    Buffer.from(signatureHeader),
     Buffer.from(expected)
   );
 }`} />
       </DocSection>
+
       <DocCallout type="info" title="Retry Policy">
-        Failed webhook deliveries are retried with exponential backoff: 5s, 30s, 2m, 10m, 1h. After 5 failures, the event is marked as failed and no further retries are attempted.
+        Hyvor retries failed webhook deliveries automatically. Configure your callback URL to respond with HTTP 2xx within 10 seconds to acknowledge receipt.
       </DocCallout>
     </div>
   );

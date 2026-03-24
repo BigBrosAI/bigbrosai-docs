@@ -6,19 +6,36 @@ import { DocSection, DocCallout } from "@/components/docs/DocSection";
 export const metadata: Metadata = { title: "Email Webhooks" };
 
 const EVENTS = [
-  { event: "email.delivered", desc: "Email was accepted and delivered to the recipient's mail server." },
-  { event: "email.bounced",   desc: "Permanent delivery failure — the address is invalid or the server rejected it." },
-  { event: "email.complained",desc: "Recipient marked the email as spam." },
-  { event: "email.deferred",  desc: "Temporary delivery failure — the platform will retry automatically." },
+  { event: "send.recipient.accepted",   desc: "Email accepted by the recipient's mail server. Billing is charged at this point." },
+  { event: "send.recipient.deferred",   desc: "Temporary delivery failure — the relay will retry automatically." },
+  { event: "send.recipient.bounced",    desc: "Permanent delivery failure — the address is invalid or the server rejected it." },
+  { event: "send.recipient.complained", desc: "Recipient marked the email as spam." },
+  { event: "send.recipient.failed",     desc: "Email failed to send (non-bounce error)." },
+  { event: "send.recipient.suppressed", desc: "Recipient is on the suppression list — email was not sent." },
 ];
 
 const PAYLOAD_EXAMPLE = `{
-  "event": "email.delivered",
-  "data": {
-    "from_address": "hello@yourdomain.com",
-    "to": "user@example.com",
-    "subject": "Welcome to BigBros AI",
-    "timestamp": "2026-03-22T10:00:01Z"
+  "event": "send.recipient.accepted",
+  "payload": {
+    "send": {
+      "id": 19,
+      "uuid": "22ef6d06-bd67-420a-94d5-d02d0cb091c0",
+      "from_address": "hello@yourdomain.com",
+      "subject": "Welcome to BigBros AI"
+    },
+    "recipient": {
+      "id": 21,
+      "type": "to",
+      "address": "user@example.com",
+      "status": "accepted",
+      "try_count": 1
+    },
+    "attempt": {
+      "id": 22,
+      "status": "accepted",
+      "try_count": 1,
+      "domain": "gmail.com"
+    }
   }
 }`;
 
@@ -26,34 +43,35 @@ const VERIFY_NODE = `import crypto from 'crypto';
 import express from 'express';
 
 const app = express();
-app.use(express.json());
+app.use(express.raw({ type: 'application/json' })); // keep raw body for signature check
 
 app.post('/webhooks/email', (req, res) => {
-  const signature = req.headers['x-bigbrosai-signature']; // "sha256=<hex>"
-  const secret    = process.env.WEBHOOK_SECRET;            // stored from setup
+  const signature = req.headers['x-bigbrosai-signature'] as string; // "sha256=<hex>"
+  const secret    = process.env.WEBHOOK_SECRET!;                     // stored from setup
 
-  // Recompute HMAC-SHA256 over the raw JSON body
+  // Recompute HMAC-SHA256 over the raw body
   const expected = 'sha256=' + crypto
     .createHmac('sha256', secret)
-    .update(JSON.stringify(req.body))
+    .update(req.body)   // raw Buffer
     .digest('hex');
 
-  // Use timing-safe comparison to prevent timing attacks
-  const sigBuffer = Buffer.from(signature ?? '');
-  const expBuffer = Buffer.from(expected);
+  // Timing-safe comparison
+  const sigBuf = Buffer.from(signature ?? '');
+  const expBuf = Buffer.from(expected);
 
-  if (
-    sigBuffer.length !== expBuffer.length ||
-    !crypto.timingSafeEqual(sigBuffer, expBuffer)
-  ) {
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
     return res.status(401).send('Invalid signature');
   }
 
-  const { event, data } = req.body;
-  console.log('Received email event:', event, data);
+  const payload = JSON.parse(req.body.toString());
+  const { event, payload: data } = payload;
+
+  console.log('Email event:', event);
+  console.log('Send ID:', data?.send?.id);
+  console.log('Recipient:', data?.recipient?.address, '->', data?.recipient?.status);
 
   // Always respond 200 quickly — process async if needed
-  res.status(200).send({ received: true });
+  res.status(200).json({ received: true });
 });`;
 
 const VERIFY_PYTHON = `import hmac
@@ -68,47 +86,20 @@ def email_webhook():
     signature = request.headers.get('X-Bigbrosai-Signature', '')  # "sha256=<hex>"
     secret    = os.environ['WEBHOOK_SECRET'].encode()
 
-    body = request.get_data()  # raw bytes
-    expected = 'sha256=' + hmac.new(secret, body, hashlib.sha256).hexdigest()
+    raw_body = request.get_data()  # raw bytes — important for signature check
+    expected = 'sha256=' + hmac.new(secret, raw_body, hashlib.sha256).hexdigest()
 
     if not hmac.compare_digest(signature, expected):
         return 'Invalid signature', 401
 
     payload = request.get_json()
-    print('Email event:', payload['event'])
+    event   = payload['event']
+    send    = payload['payload']['send']
+    recipient = payload['payload']['recipient']
+
+    print(f"Event: {event}, Send ID: {send['id']}, Recipient: {recipient['address']}")
 
     return jsonify(received=True), 200`;
-
-const VERIFY_GO = `package main
-
-import (
-  "crypto/hmac"
-  "crypto/sha256"
-  "encoding/hex"
-  "fmt"
-  "io"
-  "net/http"
-  "os"
-)
-
-func emailWebhook(w http.ResponseWriter, r *http.Request) {
-  sig    := r.Header.Get("X-Bigbrosai-Signature") // "sha256=<hex>"
-  secret := []byte(os.Getenv("WEBHOOK_SECRET"))
-
-  body, _ := io.ReadAll(r.Body)
-
-  mac := hmac.New(sha256.New, secret)
-  mac.Write(body)
-  expected := "sha256=" + hex.EncodeToString(mac.Sum(nil))
-
-  if !hmac.Equal([]byte(sig), []byte(expected)) {
-    http.Error(w, "Invalid signature", http.StatusUnauthorized)
-    return
-  }
-
-  fmt.Println("Verified webhook:", string(body))
-  w.WriteHeader(http.StatusOK)
-}`;
 
 export default function EmailWebhooksPage() {
   return (
@@ -130,11 +121,11 @@ export default function EmailWebhooksPage() {
       <DocSection title="How It Works">
         <ol className="space-y-3 text-sm dark:text-[#8b949e] text-gray-600">
           {[
-            "Configure a webhook for your domain via the dashboard (Settings → Email → Webhooks).",
+            "Configure a webhook via the Webhook Config API — pass your domain and callback URL.",
             "Store the signing secret returned — it is shown only once.",
-            "BigBrosAI receives a delivery event from the email relay.",
+            "BigBrosAI receives a delivery event from the email relay (Hyvor).",
             "We sign the forwarded payload with your secret and POST it to your callback URL.",
-            "Your server verifies the signature and processes the event.",
+            "Your server verifies the X-Bigbrosai-Signature header and processes the event.",
           ].map((step, i) => (
             <li key={i} className="flex gap-3">
               <span className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-[#1f6feb]/10 border border-[#1f6feb]/30 text-[#58a6ff] text-xs font-bold font-mono">{i + 1}</span>
@@ -178,9 +169,9 @@ export default function EmailWebhooksPage() {
             </thead>
             <tbody>
               {[
-                ["X-Bigbrosai-Signature", "sha256=<hex>",    "HMAC-SHA256 of the raw JSON body, prefixed with sha256="],
-                ["X-Bigbrosai-Event",     "email.delivered", "The event type string"],
-                ["Content-Type",          "application/json","Always JSON"],
+                ["X-Bigbrosai-Signature", "sha256=<hex>",                  "HMAC-SHA256 of the raw JSON body, prefixed with sha256="],
+                ["X-Bigbrosai-Event",     "send.recipient.accepted",       "The event type string"],
+                ["Content-Type",          "application/json",              "Always JSON"],
               ].map(([header, value, desc]) => (
                 <tr key={header} className="border-b dark:border-[#161b22] border-gray-100 last:border-0">
                   <td className="px-4 py-2.5 font-mono text-[#58a6ff] text-xs whitespace-nowrap">{header}</td>
@@ -194,14 +185,23 @@ export default function EmailWebhooksPage() {
       </DocSection>
 
       <DocSection title="Payload Shape">
+        <p className="text-sm dark:text-[#8b949e] text-gray-600 mb-3">
+          The payload is forwarded as-is from the email relay. The top-level keys are{" "}
+          <code className="dark:text-[#79c0ff] text-blue-600">event</code> and{" "}
+          <code className="dark:text-[#79c0ff] text-blue-600">payload</code>. Inside{" "}
+          <code className="dark:text-[#79c0ff] text-blue-600">payload</code> you get{" "}
+          <code className="dark:text-[#79c0ff] text-blue-600">send</code>,{" "}
+          <code className="dark:text-[#79c0ff] text-blue-600">recipient</code>, and{" "}
+          <code className="dark:text-[#79c0ff] text-blue-600">attempt</code>.
+        </p>
         <CodeBlock lang="json" code={PAYLOAD_EXAMPLE} />
       </DocSection>
 
       <DocSection title="Verifying the Signature">
         <p className="dark:text-[#8b949e] text-gray-600 text-sm mb-4">
-          The signature is an HMAC-SHA256 of the raw JSON body, prefixed with{" "}
+          The signature is an HMAC-SHA256 of the <strong>raw request body</strong>, prefixed with{" "}
           <code className="dark:text-[#79c0ff] text-blue-600">sha256=</code>. Always use a timing-safe comparison
-          to prevent timing attacks.
+          and compute the HMAC over the raw bytes — not a re-serialised JSON string.
         </p>
         <div className="space-y-4">
           <div>
@@ -212,21 +212,16 @@ export default function EmailWebhooksPage() {
             <p className="text-xs dark:text-[#8b949e] text-gray-500 mb-2 font-medium uppercase tracking-wider">Python</p>
             <CodeBlock lang="python" code={VERIFY_PYTHON} />
           </div>
-          <div>
-            <p className="text-xs dark:text-[#8b949e] text-gray-500 mb-2 font-medium uppercase tracking-wider">Go</p>
-            <CodeBlock lang="go" code={VERIFY_GO} />
-          </div>
         </div>
       </DocSection>
 
       <DocCallout type="warning" title="Respond quickly">
         Your endpoint must return a <code>200</code> response within <strong>10 seconds</strong>.
-        If it times out or returns a non-2xx status, the event is not retried — process heavy work
-        asynchronously after acknowledging receipt.
+        Process heavy work asynchronously after acknowledging receipt.
       </DocCallout>
 
       <DocCallout type="info" title="Secret rotation">
-        To rotate your webhook secret, reconfigure the webhook from the dashboard. The new secret
+        To rotate your webhook secret, reconfigure the webhook via the Webhook Config API. The new secret
         takes effect immediately — update your server before rotating.
       </DocCallout>
     </div>
