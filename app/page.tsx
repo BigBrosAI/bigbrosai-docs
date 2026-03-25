@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, MessageSquare, Megaphone, BarChart2, Zap, Users, Code2, Sun, Moon, Mail, MessageCircle, Smartphone, Instagram, ChevronRight } from "lucide-react";
+import { ArrowRight, MessageSquare, BarChart2, Zap, Users, Code2, Sun, Moon, Mail, MessageCircle, Smartphone, Instagram, ChevronRight } from "lucide-react";
 import { CodeBlock } from "@/components/docs/CodeBlock";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
@@ -16,12 +16,19 @@ const CHANNELS = [
 ];
 
 const FEATURES = [
-  { icon: MessageSquare, title: "Messaging APIs",      desc: "Send text, media, and template messages across all channels from a single unified API.",  color: "#25d366" },
-  { icon: Megaphone,     title: "Campaign Automation", desc: "Broadcast to thousands with advanced scheduling, audience targeting, and A/B testing.",    color: "#388bfd" },
-  { icon: BarChart2,     title: "Analytics",           desc: "Track delivery rates, read receipts, and campaign performance in real time.",              color: "#d2a8ff" },
-  { icon: Zap,           title: "Webhooks",            desc: "Receive instant event notifications for delivery, reads, replies and status changes.",     color: "#f0883e" },
-  { icon: Users,         title: "Contact Management",  desc: "Full CRM with custom fields, tags, segments, and bulk import/export.",                    color: "#3fb950" },
-  { icon: Code2,         title: "SDKs & Libraries",    desc: "Official SDKs for Node.js, Python, Java, Go, and PHP with full TypeScript support.",      color: "#f97583" },
+  { icon: MessageSquare, title: "Messaging APIs",       desc: "Send text, media, and template messages across all channels from a single unified API.",                              color: "#25d366" },
+  { icon: Mail,          title: "Email — 300 Free/day", desc: "Send transactional emails from your verified domain. 300 free emails per day, every day. ₹0.125/email beyond that.", color: "#388bfd" },
+  { icon: BarChart2,     title: "Analytics",            desc: "Track delivery rates, read receipts, and campaign performance in real time.",                                        color: "#d2a8ff" },
+  { icon: Zap,           title: "Webhooks",             desc: "Receive instant event notifications for delivery, reads, replies and status changes.",                               color: "#f0883e" },
+  { icon: Users,         title: "Contact Management",   desc: "Full CRM with custom fields, tags, segments, and bulk import/export.",                                              color: "#3fb950" },
+  { icon: Code2,         title: "SDKs & Libraries",     desc: "Official SDKs for Node.js, Python, Java, Go, and PHP with full TypeScript support.",                               color: "#f97583" },
+];
+
+const EMAIL_PERKS = [
+  { stat: "300",     label: "free emails / day",        sub: "No credit card needed"        },
+  { stat: "₹0.125", label: "per email after free tier", sub: "Pay only for what you use"    },
+  { stat: "99.9%",  label: "delivery uptime SLA",       sub: "Powered by Hyvor Relay"       },
+  { stat: "<2s",    label: "average delivery time",     sub: "Global relay infrastructure"  },
 ];
 
 const QUICK_EXAMPLE = `# Send a WhatsApp template message
@@ -74,7 +81,7 @@ export default function HomePage() {
       <section className="relative max-w-3xl mx-auto px-6 pt-24 pb-20 text-center">
         <div className="inline-flex items-center gap-2 dark:bg-green-500/10 bg-green-50 border border-green-500/30 rounded-full px-4 py-1.5 mb-8">
           <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-green-600 dark:text-green-400 text-xs font-medium">API v1 — Generally Available</span>
+          <span className="text-green-600 dark:text-green-400 text-xs font-medium">API v1 — Generally Available · 300 free emails/day</span>
         </div>
 
         <h1 className="text-5xl font-extrabold leading-tight tracking-tight mb-6 dark:text-[#e1e4e8] text-gray-900">
@@ -127,6 +134,73 @@ export default function HomePage() {
               <p className="dark:text-[#8b949e] text-gray-500 text-sm leading-relaxed">{f.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Email Free Tier Highlight */}
+      <section className="max-w-6xl mx-auto px-6 pb-20">
+        <div className="relative overflow-hidden rounded-2xl border dark:border-[#388bfd]/30 border-blue-200 dark:bg-[#161b22] bg-blue-50/40 px-8 py-12">
+          {/* Background glow */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-green-500/5 rounded-full blur-3xl" />
+          </div>
+
+          <div className="relative">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-[#388bfd]/10 border border-[#388bfd]/30 rounded-full px-3 py-1 mb-5">
+              <Mail size={12} className="text-[#388bfd]" />
+              <span className="text-[#388bfd] text-xs font-semibold">Email API — Free Tier</span>
+            </div>
+
+            <div className="flex flex-col lg:flex-row lg:items-center gap-8">
+              {/* Left: headline */}
+              <div className="flex-1">
+                <h2 className="text-3xl font-extrabold dark:text-[#e1e4e8] text-gray-900 mb-3 leading-tight">
+                  300 free emails<br />
+                  <span className="text-[#388bfd]">every single day</span>
+                </h2>
+                <p className="dark:text-[#8b949e] text-gray-500 text-base leading-relaxed mb-6 max-w-lg">
+                  Every organisation gets 300 transactional emails free per day — no credit card, no trial period, no expiry. Send from your own verified domain with full DKIM, SPF, and DMARC authentication. Only pay when you go beyond the free tier.
+                </p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Link href="/docs/email/send" className="flex items-center gap-2 bg-[#388bfd] hover:bg-[#2671D6] text-white font-semibold px-5 py-2.5 rounded-lg text-sm transition-colors">
+                    Start Sending Free <ArrowRight size={14} />
+                  </Link>
+                  <Link href="/docs/email/domain-add" className="flex items-center gap-2 dark:border-[#30363d] border-gray-200 border dark:text-[#8b949e] text-gray-600 font-medium px-5 py-2.5 rounded-lg text-sm hover:dark:border-[#388bfd]/40 hover:border-[#388bfd]/40 transition-all">
+                    Setup Domain <ChevronRight size={14} />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right: stats grid */}
+              <div className="grid grid-cols-2 gap-3 lg:w-80 shrink-0">
+                {EMAIL_PERKS.map(p => (
+                  <div key={p.stat} className="dark:bg-[#0d1117]/60 bg-white rounded-xl border dark:border-[#21262d] border-gray-200 px-4 py-4">
+                    <p className="text-2xl font-extrabold dark:text-[#e1e4e8] text-gray-900 leading-none">{p.stat}</p>
+                    <p className="text-xs font-semibold dark:text-[#8b949e] text-gray-600 mt-1">{p.label}</p>
+                    <p className="text-[10px] dark:text-[#6a737d] text-gray-400 mt-0.5">{p.sub}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom feature pills */}
+            <div className="flex flex-wrap gap-2 mt-8 pt-6 border-t dark:border-[#21262d] border-gray-200">
+              {[
+                "✓ DKIM + SPF + DMARC",
+                "✓ Delivery webhooks",
+                "✓ Bounce & complaint tracking",
+                "✓ Attachment support",
+                "✓ Idempotency keys",
+                "✓ IP allowlist",
+              ].map(f => (
+                <span key={f} className="text-xs dark:text-[#8b949e] text-gray-500 dark:bg-[#161b22] bg-white border dark:border-[#21262d] border-gray-200 px-3 py-1 rounded-full">
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
